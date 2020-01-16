@@ -42,11 +42,16 @@ class Board:
             self.tiles = rotate_table(transposed_tiles)
 
 
-    # FIXME
     def print(self):
+        max_column_widths = []
+        columns = rotate_table(self.tiles)
+        for col in columns:
+            max_column_widths.append(max([len(str(tile)) for tile in col]))
         for row in self.tiles:
-            for tile in row:
-                print(tile if tile != 0 else "-", end=" ")
+            for i, tile in enumerate(row):
+                tile = str(tile)
+                padding_amount = max_column_widths[i] - len(tile)
+                print(tile + " " * padding_amount, end=" ")
             print()
 
 
@@ -87,10 +92,4 @@ def reduce_row(row: list, direction: Direction):
 
 
 board = Board()
-
-# TODO End game when tile spawn is impossible
-while True:
-    board.print()
-    move = int(input("\nMove: "))
-    board.process_move(Direction(move))
-    board.spawn_tiles(1)
+board.print()
