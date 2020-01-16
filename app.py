@@ -24,6 +24,15 @@ class Board:
         self.spawn_tiles(2)
 
 
+    def __get_empty_positions(self):
+        empty_positions = []
+        for i, row in enumerate(self.tiles):
+            for j, tile in enumerate(row):
+                if tile == 0:
+                    empty_positions.append((i, j))
+        return empty_positions
+
+
     def spawn_tiles(self, count=1):
         for _ in range(count):
             tile = 2 if choices([True, False], [0.75, 0.25])[0] else 4
@@ -43,6 +52,11 @@ class Board:
             self.tiles = rotate_table(transposed_tiles)
 
 
+    def is_reducible(self):
+        all_rows = self.tiles + rotate_table(self.tiles)
+        return any(reducible(row) for row in all_rows)
+
+
     def print(self):
         max_column_widths = []
         columns = rotate_table(self.tiles)
@@ -56,20 +70,11 @@ class Board:
             print()
 
 
-    def __get_empty_positions(self):
-        empty_positions = []
-        for i, row in enumerate(self.tiles):
-            for j, tile in enumerate(row):
-                if tile == 0:
-                    empty_positions.append((i, j))
-        return empty_positions
-
-
 def rotate_table(table):
     return np.array(np.transpose(table)).tolist()
 
 
-def merge_adjacent_tiles(row: list, direction: Direction):
+def __merge_adjacent_tiles(row: list, direction: Direction):
     merged = deepcopy(row)
     i = 0
     if direction is Direction.Right: merged.reverse()
@@ -86,20 +91,34 @@ def merge_adjacent_tiles(row: list, direction: Direction):
 
 def reduce_row(row: list, direction: Direction):
     number_tiles = [tile for tile in row if tile != 0]
-    reduced = merge_adjacent_tiles(number_tiles, direction)
+    reduced = __merge_adjacent_tiles(number_tiles, direction)
     filler_loc = 0 if direction is Direction.Right else len(reduced)
     while len(reduced) < BOARD_SIZE:
         reduced.insert(filler_loc, 0)
     return reduced
 
 
-board = Board()
-MOVE_DIRECTION = None
-while True:
+def reducible(row: list):
+    if 0 in row:
+        return True
+    for i in range(len(row) - 1):
+        if row[i] == row[i + 1] and row[i] != 0:
+            return True
+    return False
+
+
+print("Welcome to 2048 text!")
+BOARD = Board()
+BOARD.print()
+while BOARD.is_reducible():
     try:
-        board.print()
-        MOVE_DIRECTION = Direction(int(input("\nMove: ")))
-        board.process_move(MOVE_DIRECTION)
-        board.spawn_tiles(1)
+        move_direction = Direction(int(input("\nMove: ")))
     except ValueError:
-        print("Invalid move: 1 = up, 2 = down, 3 = left, 4 = right")
+        print("Invalid move (1 = up, 2 = down, 3 = left, 4 = right)")
+        continue
+    last_tiles = deepcopy(BOARD.tiles)
+    BOARD.process_move(move_direction)
+    if BOARD.tiles != last_tiles:
+        BOARD.spawn_tiles(1)
+    BOARD.print()
+print(f"Game over! Your best tile was {np.amax(BOARD.tiles)}.")
