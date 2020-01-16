@@ -13,10 +13,15 @@ class Direction(Enum):
     Right = 4
 
 
+# Switches the rows and columns of a table
 def rotate_table(table):
     return np.array(np.transpose(table)).tolist()
 
 
+# Merges adjacent tiles from a row with the same value in
+# the specified direction (left or right)
+# e.g. [2, 2, 4, 4] merged Left ==> [4, 8]
+# e.g. [8, 8, 8, 16] merged Right ==> [8, 16, 16]
 def __merge_adjacent_tiles(row: list, direction: Direction):
     merged = deepcopy(row)
     i = 0
@@ -32,15 +37,22 @@ def __merge_adjacent_tiles(row: list, direction: Direction):
     return merged
 
 
+# Moves and merges tiles from a row in the specified direction
 def reduce_row(row: list, direction: Direction):
+    # Tiles with no value are ignored when merging, as numbered tiles
+    # simply move across them
     number_tiles = [tile for tile in row if tile != 0]
     reduced = __merge_adjacent_tiles(number_tiles, direction)
+    # The 0's are then added back to restore the row to the size of the
+    # board. They are placed at either the start or end of the row.
     filler_loc = 0 if direction is Direction.Right else len(reduced)
     while len(reduced) < BOARD_SIZE:
         reduced.insert(filler_loc, 0)
     return reduced
 
 
+# Decides whether a row can be reduced (i.e. tiles can be either
+# moved or merged)
 def reducible(row: list):
     if 0 in row:
         return True
@@ -50,9 +62,12 @@ def reducible(row: list):
     return False
 
 
+# Represents the game board holding the tiles.
+# It's size is adjustable using the BOARD_SIZE constant (default is 4)
 class Board:
     def __init__(self):
         self.tiles = []
+        # Initialises the board with empty values
         for _ in range(BOARD_SIZE):
             row = []
             for _ in range(BOARD_SIZE):
@@ -61,6 +76,8 @@ class Board:
         self.spawn_tiles(2)
 
 
+    # Returns a list of the positions on the board not occupied by
+    # numbered tiles
     def __get_empty_positions(self):
         empty_positions = []
         for i, row in enumerate(self.tiles):
@@ -70,6 +87,9 @@ class Board:
         return empty_positions
 
 
+    # Spawns a specified number of tiles in random positions.
+    # Tiles of value '2' have a 75% chance of spawning compared to a
+    # 25% chance for '4' tiles
     def spawn_tiles(self, count=1):
         for _ in range(count):
             tile = 2 if choices([True, False], [0.75, 0.25])[0] else 4
@@ -77,24 +97,37 @@ class Board:
             self.tiles[tile_pos[0]][tile_pos[1]] = tile
 
 
+    # Reorders the tiles in the board based on a player move
     def process_move(self, direction: Direction):
-        if direction.value > 2:
+        if direction.value > 2: # Left or Right
+            # Reduces each row
             for i, row in enumerate(self.tiles):
                 self.tiles[i] = reduce_row(row, direction)
         else:
+            # If the direction of the player move is vertical (Up or Down),
+            # the tiles are 'rotated' (the columns become the rows)
+            # The new 'rows' are then reduced, before the board is rotated
+            # back to normal
             transposed_tiles = rotate_table(self.tiles)
+            # Up ==> Left, Down ==> Right
             new_direction = Direction(direction.value + 2)
             for i, row in enumerate(transposed_tiles):
                 transposed_tiles[i] = reduce_row(row, new_direction)
             self.tiles = rotate_table(transposed_tiles)
 
 
+    # Decides if there are any reducible rows or columns left in the board.
+    # If this returns False, the player has lost
     def is_reducible(self):
         all_rows = self.tiles + rotate_table(self.tiles)
         return any(reducible(row) for row in all_rows)
 
 
+    # Prints the tiles to the console with aligned columns.
+    # Tiles of no value are printed as hyphens, for readability
     def print(self):
+        # The longest item in each column is used to calculate the padding
+        # between tiles when printing
         max_column_widths = []
         columns = rotate_table(self.tiles)
         for col in columns:
@@ -117,11 +150,16 @@ CONTROLS = {
 print("Welcome to 2048 text!")
 BOARD = Board()
 BOARD.print()
+
+# Runs until the player cannot make any more moves
 while BOARD.is_reducible():
     move_direction = CONTROLS.get(input("\nMove: ").lower())
     if move_direction is None:
         print("Invalid move! Use the WASD keys to move the tiles.")
         continue
+    # The values of the tiles are saved before a move is processed, then
+    # compared to the board state afterwards. If these are equal (meaning that
+    # no 'move' has actually occured), then a new tile isn't spawned
     last_tiles = deepcopy(BOARD.tiles)
     BOARD.process_move(move_direction)
     if BOARD.tiles != last_tiles:
