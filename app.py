@@ -1,4 +1,5 @@
 from random import choice, choices
+from copy import deepcopy
 from enum import Enum
 import numpy as np
 
@@ -32,13 +33,13 @@ class Board:
 
     def process_move(self, direction: Direction):
         if direction.value > 2:
-            for row in self.tiles:
-                reduce_row(row, direction)
+            for i, row in enumerate(self.tiles):
+                self.tiles[i] = reduce_row(row, direction)
         else:
             transposed_tiles = rotate_table(self.tiles)
             new_direction = Direction(direction.value + 2)
-            for row in transposed_tiles:
-                reduce_row(row, new_direction)
+            for i, row in enumerate(transposed_tiles):
+                transposed_tiles[i] = reduce_row(row, new_direction)
             self.tiles = rotate_table(transposed_tiles)
 
 
@@ -49,7 +50,7 @@ class Board:
             max_column_widths.append(max([len(str(tile)) for tile in col]))
         for row in self.tiles:
             for i, tile in enumerate(row):
-                tile = str(tile)
+                tile = str(tile) if tile != 0 else "-"
                 padding_amount = max_column_widths[i] - len(tile)
                 print(tile + " " * padding_amount, end=" ")
             print()
@@ -69,27 +70,36 @@ def rotate_table(table):
 
 
 def merge_adjacent_tiles(row: list, direction: Direction):
+    merged = deepcopy(row)
     i = 0
-    if direction is Direction.Right: row.reverse()
-    while i < len(row) - 1:
-        current_tile = row[i]
-        neighbour = row[i + 1]
+    if direction is Direction.Right: merged.reverse()
+    while i < len(merged) - 1:
+        current_tile = merged[i]
+        neighbour = merged[i + 1]
         if current_tile == neighbour:
-            row[i] = current_tile + neighbour
-            row.pop(i + 1)
+            merged[i] = current_tile + neighbour
+            merged.pop(i + 1)
         i += 1
-    if direction is Direction.Right: row.reverse()
+    if direction is Direction.Right: merged.reverse()
+    return merged
 
 
-# TODO Find out if anything changed from the original list;
-# if not, the board should not spawn a tile
 def reduce_row(row: list, direction: Direction):
-    row[:] = [tile for tile in row if tile != 0]
-    merge_adjacent_tiles(row, direction)
-    filler_loc = 0 if direction is Direction.Right else len(row)
-    while len(row) < BOARD_SIZE:
-        row.insert(filler_loc, 0)
+    number_tiles = [tile for tile in row if tile != 0]
+    reduced = merge_adjacent_tiles(number_tiles, direction)
+    filler_loc = 0 if direction is Direction.Right else len(reduced)
+    while len(reduced) < BOARD_SIZE:
+        reduced.insert(filler_loc, 0)
+    return reduced
 
 
 board = Board()
-board.print()
+MOVE_DIRECTION = None
+while True:
+    try:
+        board.print()
+        MOVE_DIRECTION = Direction(int(input("\nMove: ")))
+        board.process_move(MOVE_DIRECTION)
+        board.spawn_tiles(1)
+    except ValueError:
+        print("Invalid move: 1 = up, 2 = down, 3 = left, 4 = right")
