@@ -148,11 +148,11 @@ CONTROLS = {
 }
 
 print("Welcome to 2048 text!")
-BOARD = Board()
-BOARD.print()
+board = Board()
+board.print()
 
 # Runs until the player cannot make any more moves
-while BOARD.is_reducible():
+while board.is_reducible():
     move_direction = CONTROLS.get(input("\nMove: ").lower())
     if move_direction is None:
         print("Invalid move! Use the WASD keys to move the tiles.")
@@ -160,9 +160,9 @@ while BOARD.is_reducible():
     # The values of the tiles are saved before a move is processed, then
     # compared to the board state afterwards. If these are equal (meaning that
     # no 'move' has actually occured), then a new tile isn't spawned
-    last_tiles = deepcopy(BOARD.tiles)
-    BOARD.process_move(move_direction)
-    if BOARD.tiles != last_tiles:
-        BOARD.spawn_tiles(1)
-    BOARD.print()
-print(f"Game over! Your best tile was {np.amax(BOARD.tiles)}.")
+    last_tiles = deepcopy(board.tiles)
+    board.process_move(move_direction)
+    if board.tiles != last_tiles:
+        board.spawn_tiles(1)
+    board.print()
+print(f"Game over! Your best tile was {np.amax(board.tiles)}.")
