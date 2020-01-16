@@ -107,14 +107,20 @@ def reducible(row: list):
     return False
 
 
+CONTROLS = {
+    "w": Direction.Up,
+    "a": Direction.Left,
+    "s": Direction.Down,
+    "d": Direction.Right
+}
+
 print("Welcome to 2048 text!")
 BOARD = Board()
 BOARD.print()
 while BOARD.is_reducible():
-    try:
-        move_direction = Direction(int(input("\nMove: ")))
-    except ValueError:
-        print("Invalid move (1 = up, 2 = down, 3 = left, 4 = right)")
+    move_direction = CONTROLS.get(input("\nMove: ").lower())
+    if move_direction is None:
+        print("Invalid move! Use the WASD keys to move the tiles.")
         continue
     last_tiles = deepcopy(BOARD.tiles)
     BOARD.process_move(move_direction)
