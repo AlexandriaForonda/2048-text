@@ -13,6 +13,43 @@ class Direction(Enum):
     Right = 4
 
 
+def rotate_table(table):
+    return np.array(np.transpose(table)).tolist()
+
+
+def __merge_adjacent_tiles(row: list, direction: Direction):
+    merged = deepcopy(row)
+    i = 0
+    if direction is Direction.Right: merged.reverse()
+    while i < len(merged) - 1:
+        current_tile = merged[i]
+        neighbour = merged[i + 1]
+        if current_tile == neighbour:
+            merged[i] = current_tile + neighbour
+            merged.pop(i + 1)
+        i += 1
+    if direction is Direction.Right: merged.reverse()
+    return merged
+
+
+def reduce_row(row: list, direction: Direction):
+    number_tiles = [tile for tile in row if tile != 0]
+    reduced = __merge_adjacent_tiles(number_tiles, direction)
+    filler_loc = 0 if direction is Direction.Right else len(reduced)
+    while len(reduced) < BOARD_SIZE:
+        reduced.insert(filler_loc, 0)
+    return reduced
+
+
+def reducible(row: list):
+    if 0 in row:
+        return True
+    for i in range(len(row) - 1):
+        if row[i] == row[i + 1] and row[i] != 0:
+            return True
+    return False
+
+
 class Board:
     def __init__(self):
         self.tiles = []
@@ -68,43 +105,6 @@ class Board:
                 padding_amount = max_column_widths[i] - len(tile)
                 print(tile + " " * padding_amount, end=" ")
             print()
-
-
-def rotate_table(table):
-    return np.array(np.transpose(table)).tolist()
-
-
-def __merge_adjacent_tiles(row: list, direction: Direction):
-    merged = deepcopy(row)
-    i = 0
-    if direction is Direction.Right: merged.reverse()
-    while i < len(merged) - 1:
-        current_tile = merged[i]
-        neighbour = merged[i + 1]
-        if current_tile == neighbour:
-            merged[i] = current_tile + neighbour
-            merged.pop(i + 1)
-        i += 1
-    if direction is Direction.Right: merged.reverse()
-    return merged
-
-
-def reduce_row(row: list, direction: Direction):
-    number_tiles = [tile for tile in row if tile != 0]
-    reduced = __merge_adjacent_tiles(number_tiles, direction)
-    filler_loc = 0 if direction is Direction.Right else len(reduced)
-    while len(reduced) < BOARD_SIZE:
-        reduced.insert(filler_loc, 0)
-    return reduced
-
-
-def reducible(row: list):
-    if 0 in row:
-        return True
-    for i in range(len(row) - 1):
-        if row[i] == row[i + 1] and row[i] != 0:
-            return True
-    return False
 
 
 CONTROLS = {
