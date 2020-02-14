@@ -1,7 +1,9 @@
+import numpy as np
 from random import choice, choices
 from copy import deepcopy
 from enum import Enum
-import numpy as np
+from console.screen import sc
+from console import utils
 
 BOARD_SIZE = 4
 
@@ -147,15 +149,14 @@ CONTROLS = {
     "d": Direction.Right
 }
 
-print("Welcome to 2048 text!")
 board = Board()
-board.print()
 
 # Runs until the player cannot make any more moves
 while board.is_reducible():
+    utils.cls()
+    board.print()
     move_direction = CONTROLS.get(input("\nMove: ").lower())
     if move_direction is None:
-        print("Invalid move! Use the WASD keys to move the tiles.")
         continue
     # The values of the tiles are saved before a move is processed, then
     # compared to the board state afterwards. If these are equal (meaning that
@@ -164,5 +165,4 @@ while board.is_reducible():
     board.process_move(move_direction)
     if board.tiles != last_tiles:
         board.spawn_tiles(1)
-    board.print()
 print(f"Game over! Your best tile was {np.amax(board.tiles)}.")
