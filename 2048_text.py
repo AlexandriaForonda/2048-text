@@ -125,21 +125,21 @@ class Board:
         return any(reducible(row) for row in all_rows)
 
 
-    # Prints the tiles to the console with aligned columns.
-    # Tiles of no value are printed as hyphens, for readability
-    def print(self):
+    def __str__(self):
         # The longest item in each column is used to calculate the padding
         # between tiles when printing
         max_column_widths = []
         columns = rotate_table(self.tiles)
         for col in columns:
             max_column_widths.append(max([len(str(tile)) for tile in col]))
+        output = ""
         for row in self.tiles:
             for i, tile in enumerate(row):
                 tile = str(tile) if tile != 0 else "-"
                 padding_amount = max_column_widths[i] - len(tile)
-                print(tile + " " * padding_amount, end=" ")
-            print()
+                output += tile + " " * (padding_amount + 1)
+            output += "\n"
+        return output
 
 
 CONTROLS = {
@@ -154,7 +154,7 @@ board = Board()
 # Runs until the player cannot make any more moves
 while board.is_reducible():
     utils.cls()
-    board.print()
+    print(board)
     move_direction = CONTROLS.get(input("\nMove: ").lower())
     if move_direction is None:
         continue
